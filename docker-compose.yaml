@@ -1,0 +1,11 @@
+version: '3.5'
+services:
+  db_postgres:
+    image: postgres:latest
+    restart: always
+    container_name: 'db_postgres'
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=add_password
+      - POSTGRES_USER=add_user
