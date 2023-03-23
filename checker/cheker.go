@@ -4,90 +4,65 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jinzhu/gorm"
+	"log"
 	"net/http"
 	"weakpass/models"
 )
 
-//func PassControl() {
-//	arg := os.Args[1:]
-//	if arg[0] == "-p" || arg[0] == "--pass" {
-//		pass := arg[1]
-//		h := sha512.New()
-//		h.Write([]byte(pass))
-//		bs := h.Sum(nil)
-//
-//		hash := fmt.Sprintf("%x\n", bs)
-//		DataBaseGates(hash)
-//	}
-//}
-//
-//func DataBaseGates(hash string) {
-//	dbUri := models.GetDbUri()
-//	db, err := gorm.Open("postgres", dbUri)
-//	db.LogMode(false)
-//	if err != nil {
-//		panic("failed to connect database")
-//	}
-//
-//	result := models.Hashes{}
-//	db.First(&result, models.Hashes{Hash: hash})
-//
-//	res, _ := json.Marshal(result)
-//	str := fmt.Sprintf(string(res))
-//
-//	var data map[string]interface{}
-//	error := json.Unmarshal([]byte(str), &data)
-//	if error != nil {
-//		fmt.Printf("could not unmarshal json: %s\n", err)
-//		return
-//	}
-//
-//	for key, val := range data {
-//		if key == "Hash" {
-//			if val == "" {
-//			} else {
-//				db.Close()
-//				fmt.Println("Password unsecure")
-//			}
-//		}
-//	}
-//	db.Close()
-//}
+// function which get post request from main program
 
 var HashGate = func(w http.ResponseWriter, r *http.Request) {
-	dbUri := models.GetDbUri()
+	hash := r.FormValue("hash")
+	if hash == "" {
+		http.Error(w, "Validation Error", http.StatusUnprocessableEntity)
+		return
+	}
+
+	dbUri := models.GetDbUri() // open DataBase with credentials
 	db, err := gorm.Open("postgres", dbUri)
-	db.LogMode(true)
-	defer db.Close()
+	db.LogMode(false)
+	defer db.Close() // Database close when function working end
 
 	if err != nil {
 		panic("failed to connect database")
 	}
 
-	hash := r.FormValue("hash")
-
 	var model = models.Hashes{}
-	db.First(&model, models.Hashes{Hash: hash})
+	db.First(&model, models.Hashes{Hash: hash}) // checking hash in DB
 
-	res, err := json.Marshal(model)
+	res, err := json.Marshal(model) // json format data
 	str := fmt.Sprintf(string(res))
 
-	var data map[string]interface{}
+	var data map[string]interface{} // using map for enumeration data
 	error := json.Unmarshal([]byte(str), &data)
 	if error != nil {
 		fmt.Printf("could not unmarshal json: %s\n", err)
 		return
 	}
 
-	fmt.Println(data)
-
-	for key, val := range data {
+	for key, val := range data { // condition for the presence of hash in the database
+		safety := ""
 		if key == "Hash" {
 			if val == "" {
-				fmt.Fprintf(w, "Secure")
+				safety = "Secure"
 			} else {
-				fmt.Fprintf(w, "Unsecure")
+				safety = "Unsecure"
+
 			}
+			ReturnResponse(w, safety)
 		}
 	}
+}
+
+func ReturnResponse(w http.ResponseWriter, safety string) { // function return message response
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	resp := make(map[string]string)
+	resp["message"] = safety
+	jsonResp, err := json.Marshal(resp)
+	if err != nil {
+		log.Fatalf("Error happened in JSON marshal. Err: %s", err)
+	}
+	w.Write(jsonResp)
+	return
 }

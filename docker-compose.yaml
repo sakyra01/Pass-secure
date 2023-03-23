@@ -7,5 +7,5 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_PASSWORD=add_password
-      - POSTGRES_USER=add_user
+      - POSTGRES_PASSWORD=__password__
+      - POSTGRES_USER=__username__

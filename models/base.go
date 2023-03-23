@@ -17,7 +17,7 @@ func Init() {
 		panic("failed to connect database")
 	}
 	db = conn
-	db.Debug() // Add .AutoMigrate(&Hashes{}) for migration
+	db.Debug().AutoMigrate(&Hashes{}) // Add .AutoMigrate(&Hashes{}) for migration
 }
 
 func GetDbUri() string {
@@ -26,6 +26,7 @@ func GetDbUri() string {
 		fmt.Print(e)
 	}
 
+	// add credentials from .env
 	username := os.Getenv("db_user")
 	password := os.Getenv("db_pass")
 	dbName := os.Getenv("db_name")
